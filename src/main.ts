@@ -105,17 +105,17 @@ const drawAnimatedTime = (ctx: CanvasRenderingContext2D, pos: Pos, scale: number
         const lerpTime = 0.5;
 
         const rate = [
-            ((curr.h - Math.floor(curr.h)) * 3600) / lerpTime,
+            timing((curr.h - Math.floor(curr.h)) * 3600) / lerpTime,
             0,
-            ((curr.m - Math.floor(curr.m)) * 60) / lerpTime,
+            timing((curr.m - Math.floor(curr.m)) * 60) / lerpTime,
             0,
-            (curr.s - Math.floor(curr.s)) / lerpTime
+            timing((curr.s - Math.floor(curr.s))) / lerpTime
         ];
 
         const prevTimePath = timePath(pos, scale)(
-            clamp(0, 24)(Math.floor(curr.h) - 1) % 24,
-            clamp(0, 60)(Math.floor(curr.m) - 1) % 60,
-            clamp(0, 60)(Math.floor(curr.s) - 1) % 60
+            looping(0, 23)(Math.floor(curr.h) - 1),
+            looping(0, 59)(Math.floor(curr.m) - 1),
+            looping(0, 59)(Math.floor(curr.s) - 1)
         );
 
         const currTimePath = timePath(pos, scale)(
@@ -187,6 +187,13 @@ const clamp = (min: number, max: number) => (n: number) =>
 
 const clamp01 = clamp(0, 1);
 
+const looping = (min: number, max: number) => (n: number) =>
+    n > max
+        ? min
+        : n < min
+            ? max
+            : n;
+
 const stringToColor = (color: string) =>
     [
         Math.floor(parseInt(color.slice(1), 16) / (256 * 256)),
@@ -196,30 +203,33 @@ const stringToColor = (color: string) =>
 
 const chooseTextColor = (color: string) => {
     // sRGB を RGB に変換し、背景色の相対輝度を求める
-    const toRgbItem = item => {
-        const i = item / 255
-        return i <= 0.03928 ? i / 12.92 : Math.pow((i + 0.055) / 1.055, 2.4)
-    }
+    const toRgbItem = (item: number) => {
+        const i = item / 255;
+        return i <= 0.03928 ? i / 12.92 : Math.pow((i + 0.055) / 1.055, 2.4);
+    };
 
     const [red, green, blue] = stringToColor(color);
 
-    const R = toRgbItem(red)
-    const G = toRgbItem(green)
-    const B = toRgbItem(blue)
-    const Lbg = 0.2126 * R + 0.7152 * G + 0.0722 * B
+    const R = toRgbItem(red);
+    const G = toRgbItem(green);
+    const B = toRgbItem(blue);
+    const Lbg = 0.2126 * R + 0.7152 * G + 0.0722 * B;
 
     // 白と黒の相対輝度。定義からそれぞれ 1 と 0 になる。
-    const Lw = 1
-    const Lb = 0
+    const Lw = 1;
+    const Lb = 0;
 
     // 白と背景色のコントラスト比、黒と背景色のコントラスト比を
     // それぞれ求める。
-    const Cw = (Lw + 0.05) / (Lbg + 0.05)
-    const Cb = (Lbg + 0.05) / (Lb + 0.05)
+    const Cw = (Lw + 0.05) / (Lbg + 0.05);
+    const Cb = (Lbg + 0.05) / (Lb + 0.05);
 
     // コントラスト比が大きい方を文字色として返す。
-    return Cw < Cb ? '#030303' : '#eee'
+    return Cw < Cb ? '#242424' : '#eee';
 }
+
+const timing = (t: number) =>
+    Math.pow(2, 10 * (t - 1));
 
 // run
 
