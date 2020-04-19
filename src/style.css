@@ -20,12 +20,16 @@ canvas {
     top: 0;
 }
 
-#blur_canvas {
+div#grad {
     filter: blur(5px);
     transform: scale(1.1, 1.1);
+    z-index: -1;    
 }
 
 .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
     display: flex;
     justify-content: flex-end;
     align-items: center;

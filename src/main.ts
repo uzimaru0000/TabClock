@@ -12,14 +12,14 @@ interface Grad {
 }
 
 const main = () => {
-    const blurCtx = init('blur_canvas');
-    const ctx = init('canvas');
-
     const fromColor = randomColor();
     const toColor = randomColor();
-    const grad = { from: fromColor, to: toColor };
-    drawGrad(blurCtx, grad);
+    const gradElem = document.getElementById('grad');
+    gradElem.style.background = `linear-gradient(45deg, ${fromColor}, ${toColor})`;
 
+    const ctx = init('canvas');
+
+    const grad = { from: fromColor, to: toColor };
     let cancel = loop({ ctx, grad });
 
     window.addEventListener('focus', () => {
