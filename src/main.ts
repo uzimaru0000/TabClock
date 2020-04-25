@@ -90,34 +90,6 @@ const draw = ({ ctx, grad }: Context, time: number) => {
   drawAnimatedTime(ctx, pos, scale)(time);
 };
 
-const createGradient = (
-  ctx: CanvasRenderingContext2D,
-  from: string,
-  to: string
-) => {
-  const grad = ctx.createLinearGradient(
-    0,
-    ctx.canvas.height,
-    ctx.canvas.width,
-    0
-  );
-  grad.addColorStop(0, from);
-  grad.addColorStop(1, to);
-
-  return grad;
-};
-
-const drawGrad = (ctx: CanvasRenderingContext2D, grad: Grad) => {
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.fillStyle = createGradient(ctx, grad.from, grad.to);
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-};
-
 const drawPath = (ctx: CanvasRenderingContext2D) => ([from, to]: Path) => {
   ctx.moveTo(from[0], from[1]);
   ctx.lineTo(to[0], to[1]);
