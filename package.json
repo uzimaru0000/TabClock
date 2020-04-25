@@ -5,6 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "parcel watch -d ./dist --no-source-maps src/index.html",
+    "start": "parcel serve -d ./dist src/index.html",
     "build": "parcel build -d ./dist --no-source-maps --public-url ./ src/index.html && cp ./manifest.json ./dist && cp ./icon.png ./dist"
   },
   "keywords": [],
