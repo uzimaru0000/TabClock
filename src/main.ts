@@ -23,10 +23,15 @@ const main = () => {
   let cancel = loop({ ctx, grad });
 
   window.addEventListener('focus', () => {
-    cancel = loop({ ctx, grad });
+    if (cancel === null) {
+      cancel = loop({ ctx, grad });
+    }
   });
   window.addEventListener('blur', () => {
-    cancel();
+    if (!document.fullscreen) {
+      cancel();
+      cancel = null;
+    }
   });
 
   const button = document.getElementById('fullScreenBtn');
