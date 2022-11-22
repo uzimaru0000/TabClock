@@ -1,18 +1,18 @@
 {
-  "name": "MyNewTab",
+  "name": "tab_clock",
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "parcel watch -d ./dist --no-source-maps src/index.html",
-    "start": "parcel serve -d ./dist src/index.html",
-    "build": "parcel build -d ./dist --no-source-maps --public-url ./ src/index.html && cp ./manifest.json ./dist && cp ./icon.png ./dist"
+    "start": "vite",
+    "build": "vite build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@vitejs/plugin-react": "^2.2.0",
     "parcel": "^1.12.4",
-    "typescript": "^3.7.2"
+    "typescript": "^3.7.2",
+    "vite": "^3.2.4"
   }
 }

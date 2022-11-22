@@ -11,16 +11,13 @@ interface Grad {
   to: string;
 }
 
-const main = () => {
-  const fromColor = randomColor();
-  const toColor = randomColor();
-  const gradElem = document.getElementById('grad');
-  gradElem.style.background = `linear-gradient(45deg, ${fromColor}, ${toColor})`;
-
+const main = (fromColor: string, toColor: string) => {
   const ctx = init('canvas');
 
+  const gradElem = document.getElementById('grad')!;
+  gradElem.style.background = `linear-gradient(45deg, ${fromColor}, ${toColor})`;
   const grad = { from: fromColor, to: toColor };
-  let cancel = loop({ ctx, grad });
+  let cancel: (() => void) | null = loop({ ctx, grad });
 
   window.addEventListener('focus', () => {
     if (cancel === null) {
@@ -28,13 +25,13 @@ const main = () => {
     }
   });
   window.addEventListener('blur', () => {
-    if (!document.fullscreen) {
-      cancel();
+    if (!document.fullscreenEnabled) {
+      cancel?.();
       cancel = null;
     }
   });
 
-  const button = document.getElementById('fullScreenBtn');
+  const button = document.getElementById('fullScreenBtn')!;
   button.style.setProperty('--color', chooseTextColor(toColor));
   button.addEventListener('click', () => {
     if (button.classList.contains('full')) {
@@ -50,13 +47,21 @@ const main = () => {
       button.classList.add('full');
     }
   };
+
+  return cancel;
 };
 
 const init = (id: string) => {
   const canvas = document.getElementById(id) as HTMLCanvasElement;
   canvas.width = window.innerWidth * window.devicePixelRatio;
   canvas.height = window.innerHeight * window.devicePixelRatio;
-  return canvas.getContext('2d');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) {
+    throw new Error('failed init');
+  }
+
+  return ctx;
 };
 
 const loop = (ctx: Context) => {
@@ -95,57 +100,57 @@ const draw = ({ ctx, grad }: Context, time: number) => {
   drawAnimatedTime(ctx, pos, scale)(time);
 };
 
-const drawPath = (ctx: CanvasRenderingContext2D) => ([from, to]: Path) => {
-  ctx.moveTo(from[0], from[1]);
-  ctx.lineTo(to[0], to[1]);
-};
+const drawPath =
+  (ctx: CanvasRenderingContext2D) =>
+  ([from, to]: Path) => {
+    ctx.moveTo(from[0], from[1]);
+    ctx.lineTo(to[0], to[1]);
+  };
 
-const drawAnimatedTime = (
-  ctx: CanvasRenderingContext2D,
-  pos: Pos,
-  scale: number
-) => (time: number) => {
-  ctx.save();
-  const curr = convTimer(time);
+const drawAnimatedTime =
+  (ctx: CanvasRenderingContext2D, pos: Pos, scale: number) =>
+  (time: number) => {
+    ctx.save();
+    const curr = convTimer(time);
 
-  const lerpTime = 0.5;
+    const lerpTime = 0.5;
 
-  const rate = [
-    timing((curr.h - Math.floor(curr.h)) * 3600) / lerpTime,
-    0,
-    timing((curr.m - Math.floor(curr.m)) * 60) / lerpTime,
-    0,
-    timing(curr.s - Math.floor(curr.s)) / lerpTime,
-  ];
+    const rate = [
+      timing((curr.h - Math.floor(curr.h)) * 3600) / lerpTime,
+      0,
+      timing((curr.m - Math.floor(curr.m)) * 60) / lerpTime,
+      0,
+      timing(curr.s - Math.floor(curr.s)) / lerpTime,
+    ];
 
-  const prevTimePath = timePath(pos, scale)(
-    looping(0, 23)(Math.floor(curr.h) - 1),
-    looping(0, 59)(Math.floor(curr.m) - 1),
-    looping(0, 59)(Math.floor(curr.s) - 1)
-  );
+    const prevTimePath = timePath(pos, scale)(
+      looping(0, 23)(Math.floor(curr.h) - 1),
+      looping(0, 59)(Math.floor(curr.m) - 1),
+      looping(0, 59)(Math.floor(curr.s) - 1)
+    );
 
-  const currTimePath = timePath(pos, scale)(
-    Math.floor(curr.h),
-    Math.floor(curr.m),
-    Math.floor(curr.s)
-  );
+    const currTimePath = timePath(pos, scale)(
+      Math.floor(curr.h),
+      Math.floor(curr.m),
+      Math.floor(curr.s)
+    );
 
-  ctx.beginPath();
-  prevTimePath
-    .map(
-      (x, i) => [x, currTimePath[i], rate[i]] as [Path[][], Path[][], number]
-    )
-    .map(([c, n, r]) => {
-      const [currentPath, nextPath] = [c, n].map((x) =>
-        x.reduce((acc, x) => acc.concat(x))
-      );
-      return currentPath.map((x, i) => lerpPath(r)(x, nextPath[i]));
-    })
-    .reduce((acc, x) => acc.concat(x))
-    .forEach(drawPath(ctx));
+    ctx.beginPath();
+    prevTimePath
+      .map(
+        (x, i) => [x, currTimePath[i], rate[i]] as [Path[][], Path[][], number]
+      )
+      .map(([c, n, r]) => {
+        const [currentPath, nextPath] = [c, n].map((x) =>
+          x.reduce((acc, x) => acc.concat(x))
+        );
+        return currentPath.map((x, i) => lerpPath(r)(x, nextPath[i]));
+      })
+      .reduce((acc, x) => acc.concat(x))
+      .forEach(drawPath(ctx));
 
-  ctx.stroke();
-};
+    ctx.stroke();
+  };
 
 // util
 
@@ -155,48 +160,53 @@ const convTimer = (t: number) => ({
   s: t % 60,
 });
 
-const movePath = ([dx, dy]: Pos) => (path: Path): Path =>
-  path.map(([x, y]) => [x + dx, y + dy]) as Path;
+const movePath =
+  ([dx, dy]: Pos) =>
+  (path: Path): Path =>
+    path.map(([x, y]) => [x + dx, y + dy]) as Path;
 
-const scalePath = (scale: number) => (path: Path): Path =>
-  path.map(([x, y]) => [x * scale, y * scale]) as Path;
+const scalePath =
+  (scale: number) =>
+  (path: Path): Path =>
+    path.map(([x, y]) => [x * scale, y * scale]) as Path;
 
-const lerp = (r: number) => ([x1, y1]: Pos, [x2, y2]: Pos): Pos => [
-  x1 * (1 - clamp01(r)) + x2 * clamp01(r),
-  y1 * (1 - clamp01(r)) + y2 * clamp01(r),
-];
+const lerp =
+  (r: number) =>
+  ([x1, y1]: Pos, [x2, y2]: Pos): Pos =>
+    [
+      x1 * (1 - clamp01(r)) + x2 * clamp01(r),
+      y1 * (1 - clamp01(r)) + y2 * clamp01(r),
+    ];
 
-const lerpPath = (r: number) => (
-  [from1, to1]: Path,
-  [from2, to2]: Path
-): Path => [lerp(r)(from1, from2), lerp(r)(to1, to2)];
+const lerpPath =
+  (r: number) =>
+  ([from1, to1]: Path, [from2, to2]: Path): Path =>
+    [lerp(r)(from1, from2), lerp(r)(to1, to2)];
 
-const timePath = ([px, py]: Pos, scale: number) => (
-  h: number,
-  m: number,
-  s: number
-) => {
-  const [hPath, mPath, sPath] = [h, m, s]
-    .map((n) => ('00' + n.toString()).slice(-2).split('').map(Number))
-    .map((x) => x.map((x) => numPath(x as Num)));
+const timePath =
+  ([px, py]: Pos, scale: number) =>
+  (h: number, m: number, s: number) => {
+    const [hPath, mPath, sPath] = [h, m, s]
+      .map((n) => ('00' + n.toString()).slice(-2).split('').map(Number))
+      .map((x) => x.map((x) => numPath(x as Num)));
 
-  return [hPath, [numPath(-1)], mPath, [numPath(-1)], sPath]
-    .map((xs: Path[][]) => xs.map((x: Path[]) => x.map(scalePath(scale))))
-    .reduce(
-      (acc, xs: Path[][]) => {
-        return {
-          cnt: acc.cnt + xs.length,
-          arr: [
-            ...acc.arr,
-            xs.map((x: Path[], i) =>
-              x.map(movePath([px + scale * 2 * (i + acc.cnt), py]))
-            ),
-          ],
-        };
-      },
-      { cnt: 0, arr: [] as Path[][][] }
-    ).arr;
-};
+    return [hPath, [numPath(-1)], mPath, [numPath(-1)], sPath]
+      .map((xs: Path[][]) => xs.map((x: Path[]) => x.map(scalePath(scale))))
+      .reduce(
+        (acc, xs: Path[][]) => {
+          return {
+            cnt: acc.cnt + xs.length,
+            arr: [
+              ...acc.arr,
+              xs.map((x: Path[], i) =>
+                x.map(movePath([px + scale * 2 * (i + acc.cnt), py]))
+              ),
+            ],
+          };
+        },
+        { cnt: 0, arr: [] as Path[][][] }
+      ).arr;
+  };
 
 const randomColor = () =>
   `#${('000000' + Math.floor(Math.random() * 16777216).toString(16)).slice(
@@ -247,5 +257,22 @@ const chooseTextColor = (color: string) => {
 const timing = (t: number) => Math.pow(2, 10 * (t - 1));
 
 // run
+const url = new URL(window.location.href);
 
-main();
+let fromColor = url.searchParams.get('from');
+let toColor = url.searchParams.get('to');
+
+if (!fromColor || !toColor) {
+  fromColor = fromColor ?? randomColor();
+  toColor = toColor ?? randomColor();
+  url.searchParams.set('from', fromColor);
+  url.searchParams.set('to', toColor);
+  location.replace(url);
+}
+
+let stop = main(fromColor, toColor);
+const resizeObserver = new ResizeObserver(() => {
+  stop();
+  stop = main(fromColor!, toColor!);
+});
+resizeObserver.observe(document.body);
